@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tank Arena</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;touch-action:none}
+        html,body{overflow:hidden;font-family:'Courier New',monospace;background:#1a1a2e;height:100%}
+        canvas{display:block}
+        /* Auth Screen */
+        #authScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0a1e 0%,#1a1a3e 50%,#0a0a2e 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:400;color:#fff}
+        #authScreen h1{font-size:48px;color:#0ff;text-shadow:0 0 20px rgba(0,255,255,0.5);margin-bottom:4px;letter-spacing:4px}
+        #authScreen .auth-sub{font-size:12px;color:#888;margin-bottom:30px}
+        .auth-box{width:280px;max-width:90vw;display:flex;flex-direction:column;gap:10px}
+        .auth-input{width:100%;padding:12px 14px;background:#111;border:2px solid #333;border-radius:8px;color:#fff;font-size:16px;font-family:'Courier New',monospace;outline:none;transition:border-color .2s}
+        .auth-input:focus{border-color:#5D5CDE}
+        .auth-input::placeholder{color:#555}
+        .auth-error{color:#e74c3c;font-size:12px;text-align:center;min-height:18px;text-shadow:0 0 5px rgba(231,76,60,0.3)}
+        .auth-success{color:#2ecc71;font-size:12px;text-align:center;min-height:18px}
+        .auth-btns{display:flex;gap:10px}
+        .auth-btn{flex:1;padding:12px;border:2px solid #5D5CDE;border-radius:8px;background:rgba(93,92,222,0.15);color:#fff;font-family:'Courier New',monospace;font-size:16px;cursor:pointer;transition:all .2s;text-align:center}
+        .auth-btn:hover,.auth-btn:active{background:rgba(93,92,222,0.4);border-color:#0ff}
+        .auth-btn.secondary{border-color:#444;background:rgba(60,60,60,0.3);font-size:14px}
+        .auth-btn.secondary:hover{border-color:#888;background:rgba(60,60,60,0.5)}
+        .auth-link{color:#888;font-size:12px;text-align:center;cursor:pointer;margin-top:5px}
+        .auth-link:hover{color:#0ff}
+        /* Dashboard */
+        #dashScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0a1e 0%,#1a1a3e 50%,#0a0a2e 100%);display:none;flex-direction:column;align-items:center;z-index:350;color:#fff;overflow-y:auto;padding:30px 15px}
+        #dashScreen h2{font-size:28px;color:#0ff;text-shadow:0 0 15px rgba(0,255,255,0.4);margin-bottom:5px}
+        .dash-sub{font-size:11px;color:#666;margin-bottom:20px}
+        .dash-table{width:100%;max-width:500px;border-collapse:collapse;font-size:12px}
+        .dash-table th{background:rgba(93,92,222,0.3);color:#0ff;padding:8px 6px;text-align:left;border-bottom:2px solid #5D5CDE;font-size:11px;white-space:nowrap}
+        .dash-table td{padding:7px 6px;border-bottom:1px solid #222;color:#ccc}
+        .dash-table tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+        .dash-table .rank-1{color:#f1c40f;font-weight:bold}
+        .dash-table .rank-2{color:#bdc3c7;font-weight:bold}
+        .dash-table .rank-3{color:#cd7f32;font-weight:bold}
+        .dash-empty{color:#555;text-align:center;padding:30px;font-size:14px}
+        .dash-back{margin-top:20px;padding:10px 30px;border:1px solid #555;border-radius:6px;background:transparent;color:#888;font-size:14px;cursor:pointer;font-family:'Courier New',monospace}
+        .dash-back:hover{border-color:#aaa;color:#fff}
+        /* Start Screen */
+        #startScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0a1e 0%,#1a1a3e 50%,#0a0a2e 100%);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:300;color:#fff}
+        #startScreen h1{font-size:48px;color:#0ff;text-shadow:0 0 20px rgba(0,255,255,0.5);margin-bottom:4px;letter-spacing:4px}
+        #startScreen .sub{font-size:14px;color:#888;margin-bottom:8px}
+        .welcome-user{font-size:13px;color:#5D5CDE;margin-bottom:25px}
+        .mode-btn{width:200px;padding:20px;margin:10px;border:2px solid #5D5CDE;border-radius:12px;background:rgba(93,92,222,0.15);color:#fff;font-family:'Courier New',monospace;font-size:18px;cursor:pointer;text-align:center;transition:all 0.2s}
+        .mode-btn:hover,.mode-btn:active{background:rgba(93,92,222,0.4);border-color:#0ff;transform:scale(1.05)}
+        .mode-btn .icon{font-size:36px;display:block;margin-bottom:8px}
+        .mode-btn .desc{font-size:11px;color:#888;margin-top:4px}
+        .start-links{display:flex;gap:15px;margin-top:15px}
+        .start-link{color:#888;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid #333;border-radius:4px}
+        .start-link:hover{color:#0ff;border-color:#0ff}
+        /* HUD */
+        #score{position:fixed;top:20px;left:20px;font-size:24px;color:#e0e0e0;text-shadow:0 0 8px rgba(93,92,222,0.5);z-index:10}
+        #healthBar{position:fixed;top:60px;left:20px;width:200px;height:20px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;z-index:10;border:1px solid rgba(255,255,255,0.2)}
+        #healthFill{height:100%;background:#2ecc71;width:100%;transition:width 0.3s}
+        #waveDisplay{position:fixed;top:8px;left:50%;transform:translateX(-50%);text-align:center;z-index:10}
+        #worldNameHUD{font-size:11px;color:#888;letter-spacing:2px;margin-bottom:2px}
+        #waveNumber{font-size:20px;font-weight:bold;color:#0ff;text-shadow:0 0 10px rgba(0,255,255,0.5)}
+        #enemyCount{font-size:12px;color:#888;margin-top:2px}
+        #currencyDisplay{position:fixed;top:88px;left:20px;display:flex;gap:12px;z-index:10;font-size:14px;color:#fff}
+        .currency-item{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.4);padding:3px 8px;border-radius:6px}
+        .currency-item .coin-icon{color:#f1c40f}
+        .currency-item .diamond-icon{color:#0ff}
+        /* Controls */
+        #controls{position:fixed;bottom:20px;left:0;width:100%;display:flex;justify-content:space-between;padding:0 20px;z-index:10}
+        .joystick-container{position:relative;width:150px;height:150px;touch-action:none}
+        .joystick-base{position:absolute;width:120px;height:120px;background:rgba(230,230,230,0.12);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);user-select:none;border:1px solid rgba(255,255,255,0.08)}
+        .joystick-thumb{position:absolute;width:56px;height:56px;background:rgba(93,92,222,0.8);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);user-select:none;box-shadow:0 0 10px rgba(93,92,222,0.4);pointer-events:none}
+        #fireBtn{width:90px;height:90px;background:rgba(231,76,60,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;font-size:16px;align-self:flex-end;margin-bottom:20px;user-select:none;box-shadow:0 0 15px rgba(231,76,60,0.3);-webkit-tap-highlight-color:transparent;touch-action:none}
+        #fireBtn.active{background:rgb(231,76,60);transform:scale(0.92)}
+        /* Weapon Selector */
+        #weaponSelector{position:fixed;top:115px;left:10px;display:flex;flex-direction:column;gap:5px;z-index:10;max-height:calc(100vh - 300px);overflow-y:auto;touch-action:auto;-webkit-overflow-scrolling:touch}
+        .weapon-btn{padding:5px 8px;background:rgba(60,60,60,0.7);border-radius:5px;font-size:11px;display:flex;align-items:center;cursor:pointer;user-select:none;color:#ccc;border:2px solid transparent;white-space:nowrap}
+        .weapon-btn.active{border-color:#5D5CDE;background:rgba(93,92,222,0.3)}
+        .weapon-btn.locked{opacity:0.4;pointer-events:none}
+        .weapon-btn.locked::after{content:'\1F512';margin-left:4px;font-size:10px}
+        .weapon-icon{margin-right:3px;font-size:13px}
+        .ammo-count{margin-left:auto;padding-left:5px;font-weight:bold;font-size:10px;color:#e67e22}
+        .ammo-count.low{color:#e74c3c;animation:blink .5s ease-in-out infinite alternate}
+        .ammo-count.infinite{color:#2ecc71}
+        @keyframes blink{from{opacity:1}to{opacity:.4}}
+        /* Hack */
+        #hackTerminalBtn{position:fixed;top:20px;right:20px;padding:8px 14px;background:rgba(20,20,20,0.8);border:1px solid #0f0;border-radius:4px;z-index:10;cursor:pointer;user-select:none;color:#0f0;font-size:13px;text-shadow:0 0 5px #0f0}
+        #hackTerminalBtn:hover{background:rgba(0,255,0,0.15)}
+        #hackTerminalBtn.hacked{border-color:#0ff;color:#0ff;text-shadow:0 0 8px #0ff;animation:glow 1.5s ease-in-out infinite alternate}
+        @keyframes glow{from{box-shadow:0 0 5px rgba(0,255,255,0.3)}to{box-shadow:0 0 15px rgba(0,255,255,0.6)}}
+        .hack-indicator{position:fixed;top:50px;right:20px;font-size:10px;color:#0ff;text-shadow:0 0 5px #0ff;z-index:10;display:none;line-height:1.8}
+        .hack-indicator.visible{display:block}
+        .hack-toggle{background:rgba(0,255,255,0.2);border:1px solid #0ff;color:#0ff;border-radius:3px;padding:1px 6px;font-size:9px;cursor:pointer;margin-left:4px;font-family:'Courier New',monospace}
+        .hack-toggle.off{background:rgba(255,0,0,0.2);border-color:#f44;color:#f44}
+        /* Shop */
+        #shopBtn{position:fixed;top:20px;right:110px;padding:8px 14px;background:rgba(20,20,20,0.8);border:1px solid #f1c40f;border-radius:4px;z-index:10;cursor:pointer;user-select:none;color:#f1c40f;font-size:13px;text-shadow:0 0 5px rgba(241,196,15,0.5)}
+        #shopBtn:hover{background:rgba(241,196,15,0.15)}
+        #shopModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:none;justify-content:center;align-items:center;z-index:250;overflow-y:auto}
+        .shop-panel{background:#111;border:2px solid #f1c40f;border-radius:10px;padding:20px;width:340px;max-width:92vw;max-height:90vh;overflow-y:auto;box-shadow:0 0 30px rgba(241,196,15,0.15)}
+        .shop-panel h2{color:#f1c40f;text-align:center;margin-bottom:4px;font-size:20px}
+        .shop-currency{text-align:center;color:#888;font-size:13px;margin-bottom:14px}
+        .shop-section{margin-bottom:12px}
+        .shop-section h3{color:#888;font-size:12px;margin-bottom:6px;border-bottom:1px solid #333;padding-bottom:4px}
+        .shop-item{display:flex;align-items:center;justify-content:space-between;padding:8px;margin-bottom:4px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid #222}
+        .shop-item .item-info{flex:1}
+        .shop-item .item-name{color:#fff;font-size:12px}
+        .shop-item .item-desc{color:#666;font-size:10px}
+        .buy-btn{padding:5px 12px;border:1px solid #f1c40f;background:rgba(241,196,15,0.15);color:#f1c40f;border-radius:4px;font-size:11px;cursor:pointer;font-family:'Courier New',monospace;white-space:nowrap}
+        .buy-btn:hover{background:rgba(241,196,15,0.3)}
+        .buy-btn.bought{border-color:#2ecc71;color:#2ecc71;background:rgba(46,204,113,0.1);pointer-events:none}
+        .buy-btn.cant-afford{opacity:0.4;pointer-events:none}
+        .close-shop{display:block;width:100%;padding:10px;background:transparent;border:1px solid #555;border-radius:4px;color:#888;font-size:13px;cursor:pointer;text-align:center;margin-top:10px;font-family:'Courier New',monospace}
+        .close-shop:hover{border-color:#aaa;color:#fff}
+        /* Hack Modal */
+        #hackModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;justify-content:center;align-items:center;z-index:200}
+        .hack-terminal{background:#0a0a0a;border:2px solid #0f0;border-radius:8px;padding:24px;width:320px;max-width:90vw;box-shadow:0 0 30px rgba(0,255,0,0.2)}
+        .hack-terminal h2{color:#0f0;font-size:18px;text-align:center;margin-bottom:8px;text-shadow:0 0 10px #0f0}
+        .hack-terminal .subtitle{color:#0a0;font-size:11px;text-align:center;margin-bottom:16px}
+        .code-display{display:flex;justify-content:center;gap:8px;margin-bottom:16px}
+        .code-digit{width:48px;height:56px;background:#111;border:2px solid #0f0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#0f0;text-shadow:0 0 8px #0f0}
+        .code-digit.filled{background:#0a1a0a}
+        .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+        .key-btn{padding:12px;background:#111;border:1px solid #0a0;border-radius:6px;color:#0f0;font-size:20px;cursor:pointer;text-align:center;user-select:none;transition:background .15s}
+        .key-btn:hover,.key-btn:active{background:#0a1a0a}
+        .key-btn.submit{background:#0a1a0a;border-color:#0f0;font-size:14px;font-weight:bold}
+        .key-btn.delete{font-size:14px;color:#f44;border-color:#a00}
+        .hack-status{text-align:center;font-size:12px;color:#0a0;min-height:18px;margin-bottom:8px}
+        .hack-status.error{color:#f44;text-shadow:0 0 5px #f00}
+        .hack-status.success{color:#0ff;text-shadow:0 0 5px #0ff}
+        .hack-status.locked{color:#f44;animation:lbk .3s ease-in-out infinite alternate}
+        @keyframes lbk{from{opacity:1}to{opacity:.3}}
+        .attempts-display{text-align:center;font-size:11px;color:#555;margin-bottom:8px}
+        .close-hack{display:block;width:100%;padding:8px;background:transparent;border:1px solid #333;border-radius:4px;color:#555;font-size:12px;cursor:pointer;text-align:center}
+        .close-hack:hover{border-color:#666;color:#888}
+        #cooldownIndicator{position:fixed;top:60px;right:20px;padding:5px 10px;background:rgba(0,0,0,0.5);color:#fff;border-radius:5px;font-size:14px;display:none;z-index:10}
+        /* World Transition */
+        #worldTransScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:150;color:#fff;text-align:center}
+        #worldTransScreen .wt-complete{font-size:14px;color:#888;margin-bottom:5px;letter-spacing:3px}
+        #worldTransScreen .wt-old{font-size:32px;color:#0ff;text-shadow:0 0 15px rgba(0,255,255,0.4);margin-bottom:30px}
+        #worldTransScreen .wt-arrow{font-size:28px;color:#5D5CDE;margin-bottom:30px;animation:pulse 1s ease-in-out infinite}
+        @keyframes pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+        #worldTransScreen .wt-entering{font-size:14px;color:#888;margin-bottom:5px;letter-spacing:3px}
+        #worldTransScreen .wt-new{font-size:36px;font-weight:bold;margin-bottom:30px;text-shadow:0 0 20px currentColor}
+        #worldTransScreen .wt-btn{padding:14px 40px;border:2px solid #5D5CDE;border-radius:8px;background:rgba(93,92,222,0.2);color:#fff;font-size:18px;cursor:pointer;font-family:'Courier New',monospace;transition:all .2s}
+        #worldTransScreen .wt-btn:hover{background:rgba(93,92,222,0.5);border-color:#0ff}
+        /* Game Over */
+        #gameOverScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:100;color:#fff}
+        #gameOverTitle{font-size:48px;margin-bottom:10px}
+        #gameOverStats{font-size:13px;color:#888;margin-bottom:8px;text-align:center;line-height:1.8}
+        #waveReached{font-size:18px;margin-bottom:10px;color:#888}
+        #finalScore{font-size:32px;margin-bottom:20px}
+        .go-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+        .go-btn{padding:15px 30px;background:#5D5CDE;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;font-family:'Courier New',monospace}
+        .go-btn:hover{background:#4a49b7}
+        .go-btn.secondary{background:transparent;border:1px solid #555;font-size:14px;color:#888}
+        .go-btn.secondary:hover{border-color:#aaa;color:#fff}
+    </style>
+</head>
+<body>
+    <!-- Auth Screen -->
+    <div id="authScreen">
+        <h1>TANK ARENA</h1>
+        <div class="auth-sub">Login or create an account to play</div>
+        <div class="auth-box">
+            <input class="auth-input" id="authUser" placeholder="Username" maxlength="20" autocomplete="off">
+            <input class="auth-input" id="authPass" type="password" placeholder="Password" maxlength="20">
+            <div id="authMsg" class="auth-error"></div>
+            <div class="auth-btns">
+                <div class="auth-btn" id="loginBtn">LOGIN</div>
+                <div class="auth-btn" id="signupBtn">SIGN UP</div>
+            </div>
+            <div class="auth-link" id="authDashLink">&#x1F3C6; View Leaderboard</div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashScreen">
+        <h2>&#x1F3C6; LEADERBOARD</h2>
+        <div class="dash-sub">Player rankings (current session)</div>
+        <div id="dashContent"></div>
+        <button class="dash-back" id="dashBackBtn">BACK</button>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen">
+        <h1>TANK ARENA</h1>
+        <div class="sub">Choose your control mode</div>
+        <div class="welcome-user" id="welcomeUser"></div>
+        <div class="mode-btn" id="modePhone"><span class="icon">&#x1F4F1;</span>MOBILE<span class="desc">Joystick + Fire Button</span></div>
+        <div class="mode-btn" id="modePC"><span class="icon">&#x2328;&#xFE0F;</span>PC<span class="desc">WASD + Space to Fire</span></div>
+        <div class="start-links">
+            <div class="start-link" id="startDashLink">&#x1F3C6; Leaderboard</div>
+            <div class="start-link" id="logoutLink">Logout</div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="healthBar"><div id="healthFill"></div></div>
+    <div id="waveDisplay"><div id="worldNameHUD"></div><div id="waveNumber">WAVE 0 / 50</div><div id="enemyCount">Enemies: 0</div></div>
+    <div id="currencyDisplay">
+        <div class="currency-item"><span class="coin-icon">&#x1F4B0;</span><span id="coinCount">0</span></div>
+        <div class="currency-item"><span class="diamond-icon">&#x1F48E;</span><span id="diamondCount">0</span></div>
+    </div>
+    <div id="weaponSelector"></div>
+    <div id="hackTerminalBtn">[ HACK ]</div>
+    <div class="hack-indicator" id="hackIndicator"></div>
+    <div id="cooldownIndicator"></div>
+    <div id="shopBtn">&#x1F6D2; SHOP</div>
+
+    <div id="controls" style="display:none">
+        <div class="joystick-container" id="jContainer"><div class="joystick-base" id="jBase"></div><div class="joystick-thumb" id="jThumb"></div></div>
+        <div id="fireBtn">FIRE</div>
+    </div>
+
+    <!-- Hack Modal -->
+    <div id="hackModal">
+        <div class="hack-terminal">
+            <h2>&#9608; HACK TERMINAL &#9608;</h2>
+            <div class="subtitle">// enter access code</div>
+            <div class="code-display"><div class="code-digit" id="digit0">_</div><div class="code-digit" id="digit1">_</div><div class="code-digit" id="digit2">_</div><div class="code-digit" id="digit3">_</div></div>
+            <div class="hack-status" id="hackStatus"></div>
+            <div class="attempts-display" id="attemptsDisplay">Attempts: 3 remaining</div>
+            <div class="keypad" id="keypad">
+                <div class="key-btn" data-key="1">1</div><div class="key-btn" data-key="2">2</div><div class="key-btn" data-key="3">3</div>
+                <div class="key-btn" data-key="4">4</div><div class="key-btn" data-key="5">5</div><div class="key-btn" data-key="6">6</div>
+                <div class="key-btn" data-key="7">7</div><div class="key-btn" data-key="8">8</div><div class="key-btn" data-key="9">9</div>
+                <div class="key-btn delete" data-key="del">DEL</div><div class="key-btn" data-key="0">0</div><div class="key-btn submit" data-key="enter">ENTER</div>
+            </div>
+            <button class="close-hack" id="closeHack">[ CLOSE ]</button>
+        </div>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shopModal">
+        <div class="shop-panel">
+            <h2>&#x2699; UPGRADE SHOP</h2>
+            <div class="shop-currency" id="shopCurrency"></div>
+            <div class="shop-section"><h3>COIN UPGRADES</h3><div id="coinShopItems"></div></div>
+            <div class="shop-section"><h3>DIAMOND UPGRADES</h3><div id="diamondShopItems"></div></div>
+            <button class="close-shop" id="closeShop">[ CLOSE SHOP ]</button>
+        </div>
+    </div>
+
+    <!-- World Transition -->
+    <div id="worldTransScreen">
+        <div class="wt-complete" id="wtComplete">WORLD COMPLETE</div>
+        <div class="wt-old" id="wtOldName"></div>
+        <div class="wt-arrow">&#x25BC; &#x25BC; &#x25BC;</div>
+        <div class="wt-entering">NOW ENTERING</div>
+        <div class="wt-new" id="wtNewName"></div>
+        <div class="wt-btn" id="wtContinue">CONTINUE</div>
+    </div>
+
+    <div id="gameOverScreen">
+        <h1 id="gameOverTitle">GAME OVER</h1>
+        <div id="gameOverStats"></div>
+        <div id="waveReached">Wave: 1</div>
+        <div id="finalScore">Score: 0</div>
+        <div class="go-btns">
+            <button class="go-btn" id="restartBtn">PLAY AGAIN</button>
+            <button class="go-btn secondary" id="goLeaderboard">&#x1F3C6; Leaderboard</button>
+        </div>
+    </div>
+
+    <script>
+    // ===== DARK MODE =====
+    if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('dark');
+    window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(e){e.matches?document.documentElement.classList.add('dark'):document.documentElement.classList.remove('dark')});
+
+    // ===== USER SYSTEM =====
+    var userDB={};
+    var currentUser=null;
+    function registerUser(u,p){
+        if(!u||!p)return{ok:false,msg:'Username and password required'};
+        if(u.length<2)return{ok:false,msg:'Username must be 2+ characters'};
+        if(p.length<3)return{ok:false,msg:'Password must be 3+ characters'};
+        if(userDB[u])return{ok:false,msg:'Username "'+u+'" is already taken'};
+        userDB[u]={password:p,deaths:0,totalCoins:0,totalDiamonds:0,bestWave:0,bestScore:0,gamesPlayed:0};
+        return{ok:true,msg:'Account created! You can now login.'};
+    }
+    function loginUser(u,p){
+        if(!u||!p)return{ok:false,msg:'Enter username and password'};
+        if(!userDB[u])return{ok:false,msg:'User "'+u+'" not found'};
+        if(userDB[u].password!==p)return{ok:false,msg:'Wrong password'};
+        currentUser=u;return{ok:true};
+    }
+    function updateUserStats(won){
+        if(!currentUser||!userDB[currentUser])return;
+        var u=userDB[currentUser];
+        u.gamesPlayed++;
+        if(!won)u.deaths++;
+        if(wave.cur>u.bestWave)u.bestWave=wave.cur;
+        if(score>u.bestScore)u.bestScore=score;
+        u.totalCoins+=coinsThisRun;
+        u.totalDiamonds+=diamondsThisRun;
+    }
+
+    // ===== WORLDS =====
+    var worlds=[
+        {name:'WASTELAND',bg:'#12122a',bg2:'#1a1a40',grid:'rgba(93,92,222,0.06)',border:'rgba(93,92,222,0.25)',corner:'rgba(0,255,255,0.15)',accent:'#0ff'},
+        {name:'INFERNO',bg:'#2a0f0a',bg2:'#401a10',grid:'rgba(222,80,40,0.07)',border:'rgba(222,80,40,0.25)',corner:'rgba(255,100,0,0.2)',accent:'#f60'},
+        {name:'GLACIER',bg:'#0a1a2e',bg2:'#102840',grid:'rgba(80,170,222,0.06)',border:'rgba(80,170,222,0.25)',corner:'rgba(100,200,255,0.2)',accent:'#6cf'},
+        {name:'JUNGLE',bg:'#0a220a',bg2:'#143814',grid:'rgba(50,180,60,0.06)',border:'rgba(50,180,60,0.25)',corner:'rgba(0,255,100,0.2)',accent:'#0f8'},
+        {name:'THE VOID',bg:'#0a0008',bg2:'#1a0a1a',grid:'rgba(180,40,222,0.08)',border:'rgba(180,40,222,0.3)',corner:'rgba(200,0,255,0.2)',accent:'#c0f'}
+    ];
+    function getWorldIdx(){if(wave.cur<=0)return 0;return Math.min(4,Math.floor((wave.cur-1)/10))}
+    function getWorld(){return worlds[getWorldIdx()]}
+
+    // ===== GLOBALS =====
+    var canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
+    var scoreEl=document.getElementById('score'),healthFill=document.getElementById('healthFill');
+    var gameOverScreen=document.getElementById('gameOverScreen'),gameOverTitle=document.getElementById('gameOverTitle');
+    var waveReachedEl=document.getElementById('waveReached'),finalScoreEl=document.getElementById('finalScore');
+    var restartBtn=document.getElementById('restartBtn'),cooldownInd=document.getElementById('cooldownIndicator');
+    var hackBtn=document.getElementById('hackTerminalBtn'),hackModal=document.getElementById('hackModal');
+    var hackStatusEl=document.getElementById('hackStatus'),attemptsEl=document.getElementById('attemptsDisplay');
+    var hackInd=document.getElementById('hackIndicator'),weaponDiv=document.getElementById('weaponSelector');
+    var waveNumEl=document.getElementById('waveNumber'),enemyCntEl=document.getElementById('enemyCount');
+    var coinCountEl=document.getElementById('coinCount'),diamondCountEl=document.getElementById('diamondCount');
+    var shopModal=document.getElementById('shopModal'),controlsDiv=document.getElementById('controls');
+    var startScreen=document.getElementById('startScreen'),shopCurrEl=document.getElementById('shopCurrency');
+    var fireBtn=document.getElementById('fireBtn'),worldHUD=document.getElementById('worldNameHUD');
+    var jBase=document.getElementById('jBase'),jThumb=document.getElementById('jThumb'),jContainer=document.getElementById('jContainer');
+    var authScreen=document.getElementById('authScreen'),dashScreen=document.getElementById('dashScreen');
+    var worldTransScreen=document.getElementById('worldTransScreen');
+    var authMsg=document.getElementById('authMsg');
+
+    var isMobile=false,gameStarted=false;
+    function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;genBG()}
+    resizeCanvas();window.addEventListener('resize',resizeCanvas);
+
+    // ===== AUTH UI =====
+    document.getElementById('loginBtn').addEventListener('click',function(){
+        var u=document.getElementById('authUser').value.trim(),p=document.getElementById('authPass').value;
+        var r=loginUser(u,p);
+        if(r.ok){authMsg.textContent='';authScreen.style.display='none';showStartScreen()}
+        else{authMsg.textContent=r.msg;authMsg.className='auth-error'}
+    });
+    document.getElementById('signupBtn').addEventListener('click',function(){
+        var u=document.getElementById('authUser').value.trim(),p=document.getElementById('authPass').value;
+        var r=registerUser(u,p);
+        if(r.ok){authMsg.textContent=r.msg;authMsg.className='auth-success'}
+        else{authMsg.textContent=r.msg;authMsg.className='auth-error'}
+    });
+    document.getElementById('authDashLink').addEventListener('click',function(){authScreen.style.display='none';showDashboard('auth')});
+    // Enter key on auth inputs
+    document.getElementById('authUser').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginBtn').click()});
+    document.getElementById('authPass').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginBtn').click()});
+
+    // ===== DASHBOARD =====
+    var dashReturnTo='auth';
+    function showDashboard(from){
+        dashReturnTo=from||'auth';
+        dashScreen.style.display='flex';
+        var dc=document.getElementById('dashContent');
+        var users=Object.keys(userDB);
+        if(users.length===0){dc.innerHTML='<div class="dash-empty">No players yet. Be the first!</div>';return}
+        users.sort(function(a,b){return userDB[b].bestScore-userDB[a].bestScore});
+        var h='<table class="dash-table"><tr><th>#</th><th>Player</th><th>Deaths</th><th>Coins</th><th>Diamonds</th><th>Best Wave</th><th>Best Score</th></tr>';
+        for(var i=0;i<users.length;i++){
+            var u=userDB[users[i]],rc=i<3?'rank-'+(i+1):'';
+            h+='<tr><td class="'+rc+'">'+(i+1)+'</td><td class="'+rc+'">'+users[i]+(users[i]===currentUser?' *':'')+'</td>';
+            h+='<td>'+u.deaths+'</td><td>'+u.totalCoins+'</td><td>'+u.totalDiamonds+'</td><td>'+u.bestWave+'</td><td>'+u.bestScore+'</td></tr>';
+        }
+        h+='</table>';dc.innerHTML=h;
+    }
+    document.getElementById('dashBackBtn').addEventListener('click',function(){
+        dashScreen.style.display='none';
+        if(dashReturnTo==='auth')authScreen.style.display='flex';
+        else if(dashReturnTo==='start')showStartScreen();
+        else if(dashReturnTo==='gameover')gameOverScreen.style.display='flex';
+    });
+
+    // ===== START SCREEN =====
+    function showStartScreen(){
+        startScreen.style.display='flex';
+        document.getElementById('welcomeUser').textContent='Welcome, '+currentUser+'!';
+    }
+    document.getElementById('modePhone').addEventListener('click',function(){isMobile=true;startGame()});
+    document.getElementById('modePC').addEventListener('click',function(){isMobile=false;startGame()});
+    document.getElementById('startDashLink').addEventListener('click',function(){startScreen.style.display='none';showDashboard('start')});
+    document.getElementById('logoutLink').addEventListener('click',function(){currentUser=null;startScreen.style.display='none';authScreen.style.display='flex';authMsg.textContent='';document.getElementById('authUser').value='';document.getElementById('authPass').value=''});
+    document.getElementById('goLeaderboard').addEventListener('click',function(){gameOverScreen.style.display='none';showDashboard('start')});
+
+    function startGame(){
+        startScreen.style.display='none';
+        controlsDiv.style.display=isMobile?'flex':'none';
+        gameStarted=true;resetGame();
+    }
+
+    // ===== WEAPONS =====
+    var weapons={
+        'handgun':{name:'Handgun',damage:25,cd:400,bs:8,bsz:5,bc:1,range:1000,hr:0,cr:0,icon:'\uD83D\uDD2B',color:'#f1c40f',maxAmmo:45,unlocked:true},
+        'shotgun':{name:'Shotgun',damage:15,cd:800,bs:7,bsz:4,bc:6,spread:0.3,range:400,hr:0,cr:0,icon:'\uD83D\uDD2B',color:'#e67e22',maxAmmo:20,unlocked:true},
+        'rifle':{name:'Rifle',damage:35,cd:200,bs:10,bsz:4,bc:1,range:1200,hr:0,cr:0,icon:'\uD83D\uDD2B',color:'#3498db',maxAmmo:90,unlocked:true},
+        'minigun':{name:'Minigun',damage:10,cd:50,bs:9,bsz:3,bc:1,range:800,hr:5,cr:2,maxHeat:100,icon:'\uD83D\uDD04',color:'#7f8c8d',maxAmmo:1000,unlocked:true},
+        'knife-melee':{name:'Knife(Melee)',damage:100,cd:500,range:50,icon:'\uD83D\uDD2A',melee:true,color:'#95a5a6',maxAmmo:-1,unlocked:true},
+        'knife-throw':{name:'Knife(Throw)',damage:70,cd:1000,bs:6,bsz:10,bc:1,range:400,icon:'\uD83D\uDD2A',throwable:true,color:'#95a5a6',maxAmmo:12,unlocked:true},
+        'flamethrower':{name:'Flamethrower',damage:3,cd:30,bs:5,bsz:8,bc:3,spread:0.2,range:200,hr:3,cr:1,maxHeat:120,icon:'\uD83D\uDD25',fx:'fire',color:'#e67e22',maxAmmo:500,unlocked:true},
+        'watergun':{name:'Water Gun',damage:0,cd:100,bs:6,bsz:6,bc:1,range:300,kb:60,icon:'\uD83D\uDCA6',fx:'water',color:'#3498db',maxAmmo:80,unlocked:true},
+        'energy-pistol':{name:'Energy Pistol',damage:2,cd:30,bs:12,bsz:7,bc:1,range:1500,hr:0,cr:0,icon:'\u26A1',fx:'energy',color:'#0ff',maxAmmo:-1,unlocked:false}
+    };
+
+    // ===== ENEMY TYPES =====
+    var eTypes={
+        normal:{color:'#9b59b6',spd:1.5,hp:50,dmg:10,sz:20,lbl:''},
+        speeder:{color:'#2ecc71',spd:3.5,hp:25,dmg:8,sz:16,lbl:'FAST'},
+        brute:{color:'#8b0000',spd:0.8,hp:150,dmg:25,sz:35,lbl:'BRUTE'},
+        shooter:{color:'#e67e22',spd:1.0,hp:60,dmg:5,sz:22,lbl:'SNIPER',sRange:250,sCD:2000,sDmg:15,sSpd:4},
+        bomber:{color:'#f1c40f',spd:2.2,hp:40,dmg:5,sz:18,lbl:'BOOM',exR:100,exD:40},
+        healer:{color:'#1abc9c',spd:1.2,hp:70,dmg:5,sz:20,lbl:'HEAL',hRange:150,hAmt:3,hCD:2000}
+    };
+
+    // ===== STATE =====
+    var ammo={},coins=0,diamonds=0,coinsThisRun=0,diamondsThisRun=0;
+    var upgrades={health:0,damage:0,shield:0,hackBought:false,forceShield:false,spinners:false};
+    var hackState={entry:'',wrong:0,max:3,locked:false,hacked:false,code:'2048'};
+    var wave={cur:0,maxW:50,eTotal:0,eSpawned:0,bTotal:0,bSpawned:0,inProg:false,between:true,nextT:0,lastSpT:0,bannerTxt:'',bannerST:0,bannerDur:2500,won:false};
+    var tank={x:0,y:0,angle:0,spd:3,sz:30,hp:1000,maxHp:1000,curW:'handgun',heat:0};
+    var bullets=[],enemies=[],eBullets=[],drops=[],particles=[],floatTexts=[];
+    var score=0,activeKeys={},gameActive=false,lastFire=0;
+    var aimBot=false,autoShoot=false,gamePaused=false;
+    var animId=null,spinnerAngle=0;
+    var joystickVec={x:0,y:0},jTouchId=null,fTouchId=null,jActive=false,jStart={x:0,y:0};
+
+    function initAmmo(){var k=Object.keys(weapons);for(var i=0;i<k.length;i++)ammo[k[i]]=weapons[k[i]].maxAmmo}
+    initAmmo();
+
+    // ===== BACKGROUND =====
+    var bgF=[];
+    function genBG(){bgF=[];for(var i=0;i<40;i++)bgF.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,s:Math.random()*20+5,o:Math.random()*0.08+0.02,t:Math.floor(Math.random()*3)})}
+    genBG();
+
+    function drawBG(){
+        var wld=getWorld();
+        ctx.fillStyle=wld.bg;ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.strokeStyle=wld.grid;ctx.lineWidth=1;
+        for(var x=0;x<canvas.width;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
+        for(var y=0;y<canvas.height;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
+        for(var i=0;i<bgF.length;i++){var f=bgF[i];ctx.globalAlpha=f.o;ctx.beginPath();ctx.arc(f.x,f.y,f.s,0,Math.PI*2);ctx.fillStyle=f.t===0?wld.bg2:'#0f0f20';ctx.fill()}
+        ctx.globalAlpha=1;
+        ctx.strokeStyle=wld.border;ctx.lineWidth=4;ctx.strokeRect(2,2,canvas.width-4,canvas.height-4);
+        var c=30;ctx.strokeStyle=wld.corner;ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(0,c);ctx.lineTo(0,0);ctx.lineTo(c,0);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(canvas.width-c,0);ctx.lineTo(canvas.width,0);ctx.lineTo(canvas.width,c);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,canvas.height-c);ctx.lineTo(0,canvas.height);ctx.lineTo(c,canvas.height);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(canvas.width-c,canvas.height);ctx.lineTo(canvas.width,canvas.height);ctx.lineTo(canvas.width,canvas.height-c);ctx.stroke();
+        // World-specific effects
+        var wi=getWorldIdx();
+        if(wi===1){/* Inferno embers */for(var ei=0;ei<5;ei++){var ex=Math.random()*canvas.width,ey=canvas.height-Math.random()*100;ctx.globalAlpha=Math.random()*0.3;ctx.beginPath();ctx.arc(ex,ey,Math.random()*3+1,0,Math.PI*2);ctx.fillStyle='#f60';ctx.fill()}ctx.globalAlpha=1}
+        if(wi===2){/* Glacier snowflakes */for(var si=0;si<8;si++){var sx2=Math.random()*canvas.width,sy2=Math.random()*canvas.height;ctx.globalAlpha=Math.random()*0.15;ctx.beginPath();ctx.arc(sx2,sy2,Math.random()*2+1,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill()}ctx.globalAlpha=1}
+        if(wi===4){/* Void stars */for(var vi=0;vi<10;vi++){var vx=Math.random()*canvas.width,vy=Math.random()*canvas.height;ctx.globalAlpha=Math.random()*0.4+0.1;ctx.beginPath();ctx.arc(vx,vy,Math.random()*1.5+0.5,0,Math.PI*2);ctx.fillStyle=Math.random()>0.5?'#c0f':'#f0f';ctx.fill()}ctx.globalAlpha=1}
+    }
+
+    // ===== CURRENCY =====
+    function addCoins(n){coins+=n;if(n>0)coinsThisRun+=n;coinCountEl.textContent=coins;updateShop()}
+    function addDiamonds(n){diamonds+=n;if(n>0)diamondsThisRun+=n;diamondCountEl.textContent=diamonds;updateShop()}
+    function addFloatText(x,y,txt,clr){floatTexts.push({x:x,y:y,txt:txt,clr:clr,life:60,maxLife:60})}
+
+    // ===== WEAPON UI =====
+    function buildWeaponUI(){
+        weaponDiv.innerHTML='';var k=Object.keys(weapons);
+        for(var i=0;i<k.length;i++){
+            var key=k[i],w=weapons[key],btn=document.createElement('div');
+            btn.className='weapon-btn';btn.setAttribute('data-weapon',key);
+            if(key===tank.curW)btn.classList.add('active');
+            if(!w.unlocked)btn.classList.add('locked');
+            var ic=document.createElement('span');ic.className='weapon-icon';ic.textContent=w.icon;btn.appendChild(ic);
+            var nm=document.createElement('span');nm.textContent=w.name;btn.appendChild(nm);
+            var am=document.createElement('span');am.className='ammo-count';am.setAttribute('data-ammo',key);btn.appendChild(am);
+            weaponDiv.appendChild(btn);
+        }
+        updateAmmoUI();bindWeapBtns();
+    }
+    function updateAmmoUI(){
+        var k=Object.keys(weapons);
+        for(var i=0;i<k.length;i++){
+            var key=k[i],el=document.querySelector('[data-ammo="'+key+'"]');if(!el)continue;
+            var w=weapons[key];
+            if(w.melee){el.textContent='\u221E';el.className='ammo-count infinite'}
+            else if(hackState.hacked&&key==='energy-pistol'){el.textContent='\u221E';el.className='ammo-count infinite'}
+            else{var a=ammo[key];if(a===-1){el.textContent='\u221E';el.className='ammo-count infinite'}
+            else{el.textContent=a;el.className=a<=0?'ammo-count low':a<=Math.floor(w.maxAmmo*0.2)?'ammo-count low':'ammo-count';if(a<=0)el.textContent='EMPTY'}}
+        }
+    }
+    function bindWeapBtns(){var b=weaponDiv.querySelectorAll('.weapon-btn');for(var i=0;i<b.length;i++)b[i].addEventListener('click',onWeapClick)}
+    function onWeapClick(e){
+        var btn=e.currentTarget;if(!gameActive)return;
+        var k=btn.getAttribute('data-weapon');if(!weapons[k].unlocked)return;
+        var all=weaponDiv.querySelectorAll('.weapon-btn');for(var j=0;j<all.length;j++)all[j].classList.remove('active');
+        btn.classList.add('active');tank.curW=k;tank.heat=0;
+    }
+
+    // ===== SHOP =====
+    var shopItems=[
+        {id:'health',name:'\u2764 Health +100',desc:'Increase max HP',cost:50,curr:'coin',repeat:true},
+        {id:'damage',name:'\u2694 Damage +10%',desc:'Boost all damage',cost:100,curr:'coin',repeat:true},
+        {id:'shield',name:'\uD83D\uDEE1 Shield +5%',desc:'Reduce damage taken (max 50%)',cost:75,curr:'coin',repeat:true,maxLvl:10},
+        {id:'hack',name:'\uD83D\uDD13 Hack Access',desc:'Unlock all hacks',cost:5000,curr:'coin',repeat:false},
+        {id:'ammo',name:'\uD83D\uDCE6 Ammo +12',desc:'Refill current weapon',cost:5,curr:'coin',repeat:true},
+        {id:'forceShield',name:'\uD83D\uDD35 Force Shield',desc:'Enemies take 50 dmg on contact',cost:20,curr:'diamond',repeat:false},
+        {id:'spinners',name:'\uD83C\uDF00 Spinner x5',desc:'Orbiting blades deal 10 dmg',cost:20,curr:'diamond',repeat:false}
+    ];
+    document.getElementById('shopBtn').addEventListener('click',function(){if(!gameActive)return;gamePaused=true;shopModal.style.display='flex';updateShop()});
+    document.getElementById('closeShop').addEventListener('click',function(){shopModal.style.display='none';gamePaused=false});
+
+    function updateShop(){
+        shopCurrEl.textContent='\uD83D\uDCB0 '+coins+' coins | \uD83D\uDC8E '+diamonds+' diamonds';
+        var coinDiv=document.getElementById('coinShopItems'),diaDiv=document.getElementById('diamondShopItems');
+        coinDiv.innerHTML='';diaDiv.innerHTML='';
+        for(var i=0;i<shopItems.length;i++){
+            var it=shopItems[i],div=document.createElement('div');div.className='shop-item';
+            var info=document.createElement('div');info.className='item-info';
+            var nm=document.createElement('div');nm.className='item-name';nm.textContent=it.name;
+            var ds=document.createElement('div');ds.className='item-desc';
+            var lvl='';
+            if(it.id==='health')lvl=' (Lv '+upgrades.health+')';
+            if(it.id==='damage')lvl=' (Lv '+upgrades.damage+')';
+            if(it.id==='shield')lvl=' (Lv '+upgrades.shield+'/10)';
+            ds.textContent=it.desc+lvl;
+            info.appendChild(nm);info.appendChild(ds);div.appendChild(info);
+            var btn=document.createElement('button');btn.className='buy-btn';
+            var sym=it.curr==='coin'?'\uD83D\uDCB0':'\uD83D\uDC8E';
+            var bal=it.curr==='coin'?coins:diamonds;
+            var bought=false;
+            if(!it.repeat){
+                if(it.id==='hack'&&(upgrades.hackBought||hackState.hacked))bought=true;
+                if(it.id==='forceShield'&&upgrades.forceShield)bought=true;
+                if(it.id==='spinners'&&upgrades.spinners)bought=true;
+            }
+            if(it.id==='shield'&&upgrades.shield>=10)bought=true;
+            if(bought){btn.textContent='OWNED';btn.className='buy-btn bought'}
+            else if(bal<it.cost){btn.textContent=sym+it.cost;btn.className='buy-btn cant-afford'}
+            else{btn.textContent=sym+it.cost;btn.setAttribute('data-shop',i)}
+            div.appendChild(btn);
+            (it.curr==='coin'?coinDiv:diaDiv).appendChild(div);
+        }
+        var buyBtns=document.querySelectorAll('[data-shop]');
+        for(var j=0;j<buyBtns.length;j++)buyBtns[j].addEventListener('click',onBuy);
+    }
+    function onBuy(e){
+        var idx=parseInt(e.currentTarget.getAttribute('data-shop'));var it=shopItems[idx];
+        var bal=it.curr==='coin'?coins:diamonds;if(bal<it.cost)return;
+        if(it.curr==='coin')addCoins(-it.cost);else addDiamonds(-it.cost);
+        switch(it.id){
+            case'health':upgrades.health++;tank.maxHp+=100;tank.hp=Math.min(tank.hp+100,tank.maxHp);updateHP();break;
+            case'damage':upgrades.damage++;break;
+            case'shield':if(upgrades.shield<10)upgrades.shield++;break;
+            case'hack':upgrades.hackBought=true;activateHacks();break;
+            case'ammo':var w=weapons[tank.curW];if(!w.melee&&ammo[tank.curW]!==-1){ammo[tank.curW]=Math.min(ammo[tank.curW]+12,w.maxAmmo);updateAmmoUI()}break;
+            case'forceShield':upgrades.forceShield=true;break;
+            case'spinners':upgrades.spinners=true;break;
+        }
+        updateShop();
+    }
+
+    // ===== HACK TERMINAL =====
+    hackBtn.addEventListener('click',function(){if(hackState.hacked)return;hackModal.style.display='flex';updateHackDisp()});
+    document.getElementById('closeHack').addEventListener('click',function(){hackModal.style.display='none'});
+    document.getElementById('keypad').addEventListener('click',function(e){var t=e.target;if(!t.classList.contains('key-btn'))return;handleHK(t.getAttribute('data-key'))});
+    window.addEventListener('keydown',function(e){
+        if(hackModal.style.display!=='flex')return;
+        if(e.key>='0'&&e.key<='9')handleHK(e.key);
+        else if(e.key==='Backspace')handleHK('del');
+        else if(e.key==='Enter')handleHK('enter');
+        else if(e.key==='Escape')hackModal.style.display='none';
+    });
+    function handleHK(k){
+        if(hackState.locked||hackState.hacked)return;
+        if(k==='del'){if(hackState.entry.length>0)hackState.entry=hackState.entry.slice(0,-1)}
+        else if(k==='enter'){if(hackState.entry.length===4)submitHack();else{hackStatusEl.textContent='// enter 4 digits';hackStatusEl.className='hack-status error'}}
+        else{if(hackState.entry.length<4)hackState.entry+=k}
+        updateHackDisp();
+    }
+    function updateHackDisp(){
+        for(var i=0;i<4;i++){var d=document.getElementById('digit'+i);if(i<hackState.entry.length){d.textContent=hackState.entry[i];d.classList.add('filled')}else{d.textContent='_';d.classList.remove('filled')}}
+        attemptsEl.textContent='Attempts: '+(hackState.max-hackState.wrong)+' remaining';
+    }
+    function submitHack(){
+        if(hackState.entry===hackState.code){
+            hackState.hacked=true;hackStatusEl.textContent='>> ACCESS GRANTED <<';hackStatusEl.className='hack-status success';
+            activateHacks();setTimeout(function(){hackModal.style.display='none'},1200);
+        }else{
+            hackState.wrong++;hackState.entry='';var r=hackState.max-hackState.wrong;
+            if(r<=0){hackState.locked=true;hackStatusEl.textContent='!! SYSTEM LOCKED !!';hackStatusEl.className='hack-status locked';attemptsEl.textContent='LOCKED OUT';
+                for(var i=0;i<4;i++){var a=Math.PI*2/4*i,dist=Math.max(canvas.width,canvas.height)*0.6;enemies.push(mkEnemy(canvas.width/2+Math.cos(a)*dist,canvas.height/2+Math.sin(a)*dist,'normal','world',500))}
+                setTimeout(function(){hackModal.style.display='none'},2000);
+            }else{hackStatusEl.textContent='// WRONG CODE - '+r+' left';hackStatusEl.className='hack-status error'}
+        }
+        updateHackDisp();
+    }
+    function activateHacks(){
+        hackState.hacked=true;aimBot=true;autoShoot=true;
+        var k=Object.keys(weapons);for(var i=0;i<k.length;i++)weapons[k[i]].unlocked=true;
+        buildWeaponUI();tank.curW='energy-pistol';
+        var all=weaponDiv.querySelectorAll('.weapon-btn');
+        for(var j=0;j<all.length;j++){all[j].classList.remove('active');if(all[j].getAttribute('data-weapon')==='energy-pistol')all[j].classList.add('active')}
+        hackBtn.textContent='[ HACKED ]';hackBtn.classList.add('hacked');
+        updateHackInd();updateAmmoUI();
+    }
+    function updateHackInd(){
+        if(!hackState.hacked){hackInd.classList.remove('visible');return}
+        var abTxt=aimBot?'ON':'OFF',asTxt=autoShoot?'ON':'OFF';
+        hackInd.innerHTML='AIM BOT: '+abTxt+' <button class="hack-toggle'+(aimBot?'':' off')+'" id="togAB">toggle</button><br>'+
+            'AUTO SHOOT: '+asTxt+' <button class="hack-toggle'+(autoShoot?'':' off')+'" id="togAS">toggle</button><br>INF AMMO: ENERGY PISTOL';
+        hackInd.classList.add('visible');
+        document.getElementById('togAB').addEventListener('click',function(){aimBot=!aimBot;updateHackInd()});
+        document.getElementById('togAS').addEventListener('click',function(){autoShoot=!autoShoot;updateHackInd()});
+    }
+
+    // ===== KEYBOARD =====
+    window.addEventListener('keydown',function(e){
+        if(!gameActive||hackModal.style.display==='flex'||shopModal.style.display==='flex')return;
+        switch(e.key){
+            case'ArrowUp':case'w':activeKeys.up=true;break;case'ArrowLeft':case'a':activeKeys.left=true;break;
+            case'ArrowRight':case'd':activeKeys.right=true;break;case'ArrowDown':case's':activeKeys.down=true;break;
+            case' ':case'e':activeKeys.FIRE=true;break;
+            case'1':selWeap(0);break;case'2':selWeap(1);break;case'3':selWeap(2);break;case'4':selWeap(3);break;
+            case'5':selWeap(4);break;case'6':selWeap(5);break;case'7':selWeap(6);break;case'8':selWeap(7);break;case'9':selWeap(8);break;
+        }
+    });
+    window.addEventListener('keyup',function(e){
+        switch(e.key){
+            case'ArrowUp':case'w':activeKeys.up=false;break;case'ArrowLeft':case'a':activeKeys.left=false;break;
+            case'ArrowRight':case'd':activeKeys.right=false;break;case'ArrowDown':case's':activeKeys.down=false;break;
+            case' ':case'e':activeKeys.FIRE=false;break;
+        }
+    });
+    function selWeap(idx){
+        var b=weaponDiv.querySelectorAll('.weapon-btn');if(idx>=b.length)return;
+        var k=b[idx].getAttribute('data-weapon');if(!weapons[k].unlocked)return;
+        for(var j=0;j<b.length;j++)b[j].classList.remove('active');
+        b[idx].classList.add('active');tank.curW=k;tank.heat=0;
+    }
+
+    // ===== TOUCH CONTROLS =====
+    jContainer.addEventListener('touchstart',function(e){
+        e.preventDefault();e.stopPropagation();if(!gameActive||gamePaused)return;
+        jTouchId=e.changedTouches[0].identifier;jActive=true;
+        var r=jBase.getBoundingClientRect();jStart={x:r.left+r.width/2,y:r.top+r.height/2};
+    },{passive:false});
+
+    fireBtn.addEventListener('touchstart',function(e){
+        e.preventDefault();e.stopPropagation();if(!gameActive||gamePaused)return;
+        fTouchId=e.changedTouches[0].identifier;fireBtn.classList.add('active');activeKeys.FIRE=true;
+    },{passive:false});
+
+    window.addEventListener('touchmove',function(e){
+        if(!gameActive)return;
+        for(var i=0;i<e.changedTouches.length;i++){
+            var t=e.changedTouches[i];
+            if(t.identifier===jTouchId&&jActive){
+                e.preventDefault();
+                var dx=t.clientX-jStart.x,dy=t.clientY-jStart.y;
+                var dist=Math.sqrt(dx*dx+dy*dy),maxD=50,lim=Math.min(dist,maxD);
+                var ang=Math.atan2(dy,dx);
+                jThumb.style.transform='translate('+(lim*Math.cos(ang))+'px,'+(lim*Math.sin(ang))+'px) translate(-50%,-50%)';
+                if(lim>10){var mag=lim/maxD;joystickVec.x=Math.cos(ang)*mag;joystickVec.y=Math.sin(ang)*mag;if(!aimBot)tank.angle=ang}
+                else{joystickVec.x=0;joystickVec.y=0}
+            }
+        }
+    },{passive:false});
+
+    window.addEventListener('touchend',function(e){
+        for(var i=0;i<e.changedTouches.length;i++){
+            var t=e.changedTouches[i];
+            if(t.identifier===jTouchId){jTouchId=null;jActive=false;joystickVec.x=0;joystickVec.y=0;jThumb.style.transform='translate(-50%,-50%)'}
+            if(t.identifier===fTouchId){fTouchId=null;fireBtn.classList.remove('active');activeKeys.FIRE=false}
+        }
+    });
+    window.addEventListener('touchcancel',function(e){
+        for(var i=0;i<e.changedTouches.length;i++){
+            var t=e.changedTouches[i];
+            if(t.identifier===jTouchId){jTouchId=null;jActive=false;joystickVec.x=0;joystickVec.y=0;jThumb.style.transform='translate(-50%,-50%)'}
+            if(t.identifier===fTouchId){fTouchId=null;fireBtn.classList.remove('active');activeKeys.FIRE=false}
+        }
+    });
+
+    // ===== HELPERS =====
+    function updateHP(){var p=tank.hp/tank.maxHp*100;healthFill.style.width=p+'%';healthFill.style.backgroundColor=p>60?'#2ecc71':p>30?'#f39c12':'#e74c3c'}
+    function normAng(a){return a-Math.PI*2*Math.floor((a+Math.PI)/(Math.PI*2))}
+    function nearestEnemy(){if(!enemies.length)return null;var n=null,nd=Infinity;for(var i=0;i<enemies.length;i++){var dx=enemies[i].x-tank.x,dy=enemies[i].y-tank.y,d=Math.sqrt(dx*dx+dy*dy);if(d<nd){nd=d;n=enemies[i]}}return n}
+    function dmgMult(){return 1+upgrades.damage*0.1}
+    function shieldMult(){return Math.max(0.5,1-upgrades.shield*0.05)}
+
+    // ===== WAVE & BOSS SYSTEM =====
+    function waveECount(w){return Math.floor(3+w*1.5)}
+    function isWorldBossWave(w){return w>0&&w%10===0}
+    function isMiniBossWave(w){return w>0&&w%5===0&&w%10!==0}
+    function waveBCount(w){
+        if(w===50)return 1; // Final boss
+        if(isWorldBossWave(w))return 1;
+        if(isMiniBossWave(w))return 1;
+        return 0;
+    }
+    function bossHP(w){
+        if(w===50)return 3000;
+        if(isWorldBossWave(w))return 500+w*25;
+        if(isMiniBossWave(w))return 200+w*15;
+        return 300+w*20;
+    }
+    function bossSz(w){
+        if(w===50)return 65;
+        if(isWorldBossWave(w))return 55;
+        if(isMiniBossWave(w))return 40;
+        return 50;
+    }
+    function bossDmg(w){
+        if(w===50)return 50;
+        if(isWorldBossWave(w))return 30;
+        if(isMiniBossWave(w))return 20;
+        return 30;
+    }
+    function bossSpd(w){
+        if(w===50)return 0.6;
+        if(isWorldBossWave(w))return 0.8;
+        if(isMiniBossWave(w))return 1.2;
+        return 1.0;
+    }
+    function availETypes(w){var t=['normal'];if(w>=5)t.push('speeder');if(w>=10)t.push('brute');if(w>=15)t.push('shooter');if(w>=20)t.push('bomber');if(w>=25)t.push('healer');return t}
+
+    function mkEnemy(x,y,type,bossType,hpOvr){
+        var et=eTypes[type]||eTypes.normal;
+        var isBoss=!!bossType;
+        var hp=hpOvr||(isBoss?bossHP(wave.cur):(et.hp+wave.cur*5));
+        var sz=isBoss?bossSz(wave.cur):et.sz;
+        var spd=isBoss?bossSpd(wave.cur):et.spd*(1+wave.cur*0.012);
+        var dmg=isBoss?bossDmg(wave.cur):et.dmg+Math.floor(wave.cur*0.5);
+        return{x:x,y:y,sz:sz,spd:spd,hp:hp,maxHp:hp,dmg:dmg,boss:isBoss,bossType:bossType||null,type:type,
+            color:isBoss?(bossType==='final'?'#ff0000':bossType==='world'?'#c0392b':'#8e44ad'):et.color,
+            lbl:et.lbl,lastShot:0,lastHeal:0,
+            sRange:et.sRange||0,sCD:et.sCD||2000,sDmg:et.sDmg||15,sSpd:et.sSpd||4,
+            exR:et.exR||0,exD:et.exD||0,hRange:et.hRange||0,hAmt:et.hAmt||0,hCD:et.hCD||2000,
+            moveAng:0,flash:0,lastShieldHit:0};
+    }
+    function spawnEdge(){var x,y;if(Math.random()<0.5){x=Math.random()<0.5?-20:canvas.width+20;y=Math.random()*canvas.height}else{x=Math.random()*canvas.width;y=Math.random()<0.5?-20:canvas.height+20}return{x:x,y:y}}
+
+    function startWave(){
+        wave.cur++;if(wave.cur>wave.maxW){wave.won=true;gameOver(true);return}
+        wave.eTotal=waveECount(wave.cur);wave.bTotal=waveBCount(wave.cur);
+        wave.eSpawned=0;wave.bSpawned=0;wave.inProg=true;wave.between=false;wave.lastSpT=Date.now();
+        var bt='';
+        if(wave.cur===50)bt=' \u26A0 FINAL BOSS';
+        else if(isWorldBossWave(wave.cur))bt=' \u26A0 WORLD BOSS';
+        else if(isMiniBossWave(wave.cur))bt=' \u26A0 MINI BOSS';
+        wave.bannerTxt='WAVE '+wave.cur+bt;wave.bannerST=Date.now();
+        updateWaveUI();updateWorldHUD();
+    }
+    function updateWorldHUD(){
+        var wld=getWorld();var wi=getWorldIdx();
+        worldHUD.textContent='WORLD '+(wi+1)+': '+wld.name;
+        worldHUD.style.color=wld.accent;
+    }
+    function updateWaveUI(){
+        waveNumEl.textContent='WAVE '+wave.cur+' / '+wave.maxW;
+        enemyCntEl.textContent='Enemies: '+(enemies.length+(wave.eTotal-wave.eSpawned)+(wave.bTotal-wave.bSpawned));
+    }
+    function checkWaveDone(){
+        if(!wave.inProg)return;
+        if(wave.eSpawned>=wave.eTotal&&wave.bSpawned>=wave.bTotal&&enemies.length===0){
+            wave.inProg=false;
+            wave.bannerTxt='WAVE '+wave.cur+' COMPLETE!';wave.bannerST=Date.now();
+            // World boss wave → show transition
+            if(isWorldBossWave(wave.cur)&&wave.cur<50){
+                setTimeout(function(){showWorldTransition()},1500);
+            }else{
+                wave.between=true;wave.nextT=Date.now()+3000;
+            }
+        }
+    }
+    function showWorldTransition(){
+        gamePaused=true;
+        var oldW=getWorldIdx();var newW=Math.min(4,oldW+1);
+        document.getElementById('wtComplete').textContent='WORLD '+(oldW+1)+' COMPLETE';
+        document.getElementById('wtOldName').textContent=worlds[oldW].name;
+        document.getElementById('wtOldName').style.color=worlds[oldW].accent;
+        document.getElementById('wtNewName').textContent='WORLD '+(newW+1)+': '+worlds[newW].name;
+        document.getElementById('wtNewName').style.color=worlds[newW].accent;
+        worldTransScreen.style.display='flex';
+    }
+    document.getElementById('wtContinue').addEventListener('click',function(){
+        worldTransScreen.style.display='none';gamePaused=false;
+        wave.between=true;wave.nextT=Date.now()+2000;
+        genBG();updateWorldHUD();
+    });
+
+    function spawnWaveE(t){
+        if(!wave.inProg)return;var si=Math.max(300,2000-wave.cur*30);if(t-wave.lastSpT<si)return;
+        if(wave.bSpawned<wave.bTotal){
+            var p=spawnEdge();
+            var bt=wave.cur===50?'final':isWorldBossWave(wave.cur)?'world':'mini';
+            enemies.push(mkEnemy(p.x,p.y,'normal',bt,null));wave.bSpawned++;wave.lastSpT=t;return;
+        }
+        if(wave.eSpawned<wave.eTotal){var types=availETypes(wave.cur),tp=types[Math.floor(Math.random()*types.length)],ep=spawnEdge();
+            enemies.push(mkEnemy(ep.x,ep.y,tp,null,null));wave.eSpawned++;wave.lastSpT=t}
+    }
+
+    // ===== DROPS =====
+    function spawnDrop(x,y,type){drops.push({x:x,y:y,type:type,sz:14,st:Date.now(),life:15000})}
+
+    function handleKill(en){
+        var isBoss=en.boss;
+        var pts=isBoss?(en.bossType==='final'?2000:en.bossType==='world'?500:200):100;
+        score+=pts;scoreEl.textContent='Score: '+score;
+        mkParticles(en.x,en.y,'explosion',isBoss?30:15);
+        // Coins
+        var coinAmt=isBoss?(en.bossType==='final'?50:en.bossType==='world'?20:10):5;
+        addCoins(coinAmt);addFloatText(en.x,en.y-15,'+'+coinAmt,isBoss?'#0ff':'#f1c40f');
+        // Diamonds
+        if(isBoss){
+            var diaAmt=en.bossType==='final'?50:en.bossType==='world'?10:3;
+            addDiamonds(diaAmt);addFloatText(en.x,en.y-30,'+'+diaAmt+'\uD83D\uDC8E','#0ff');
+        }
+        // Bomber explode
+        if(en.type==='bomber'&&!isBoss){var dx=tank.x-en.x,dy=tank.y-en.y,d=Math.sqrt(dx*dx+dy*dy);if(d<en.exR){tank.hp-=Math.floor(en.exD*(1-d/en.exR)*shieldMult());updateHP();if(tank.hp<=0)gameOver(false)}mkParticles(en.x,en.y,'fire',20)}
+        // Boss special drops
+        if(isBoss){
+            if(Math.random()<0.25)spawnDrop(en.x+15,en.y,'nuke');
+            if(Math.random()<0.15)spawnDrop(en.x-15,en.y,'magnet');
+            var wk=Object.keys(weapons);for(var i=0;i<wk.length;i++){if(ammo[wk[i]]!==-1)ammo[wk[i]]=Math.min(ammo[wk[i]]+Math.floor(weapons[wk[i]].maxAmmo*0.3),weapons[wk[i]].maxAmmo)}
+            updateAmmoUI();
+        }
+        // Random drops
+        if(Math.random()<0.25)spawnDrop(en.x+Math.random()*20-10,en.y+Math.random()*20-10,'health');
+        if(Math.random()<0.10)spawnDrop(en.x+Math.random()*20-10,en.y+Math.random()*20-10,'ammo');
+    }
+
+    function collectDrops(){
+        var t=Date.now();
+        for(var i=drops.length-1;i>=0;i--){
+            var d=drops[i];if(t-d.st>d.life){drops.splice(i,1);continue}
+            var dx=tank.x-d.x,dy=tank.y-d.y,dist=Math.sqrt(dx*dx+dy*dy);
+            if(dist<tank.sz/2+d.sz/2){
+                if(d.type==='health'){tank.hp=Math.min(tank.maxHp,tank.hp+50);updateHP();mkParticles(d.x,d.y,'heal',8)}
+                else if(d.type==='ammo'){
+                    var el=[];var wk=Object.keys(weapons);for(var j=0;j<wk.length;j++){var k=wk[j];if(!weapons[k].melee&&ammo[k]!==-1&&ammo[k]<weapons[k].maxAmmo)el.push(k)}
+                    if(el.length){var ch=el[Math.floor(Math.random()*el.length)];ammo[ch]=Math.min(weapons[ch].maxAmmo,ammo[ch]+Math.max(1,Math.floor(weapons[ch].maxAmmo*0.15)));updateAmmoUI()}
+                    mkParticles(d.x,d.y,'energy',6);
+                }
+                else if(d.type==='nuke'){
+                    for(var ni=enemies.length-1;ni>=0;ni--){enemies[ni].hp-=500;if(enemies[ni].hp<=0){handleKill(enemies[ni]);enemies.splice(ni,1)}}
+                    mkParticles(tank.x,tank.y,'explosion',40);addFloatText(tank.x,tank.y-30,'NUKE!','#f44');
+                }
+                else if(d.type==='magnet'){
+                    for(var mi=0;mi<drops.length;mi++){if(mi!==i){drops[mi].x=tank.x+Math.random()*20-10;drops[mi].y=tank.y+Math.random()*20-10}}
+                    addFloatText(tank.x,tank.y-30,'MAGNET!','#e67e22');mkParticles(tank.x,tank.y,'energy',15);
+                }
+                drops.splice(i,1);
+            }
+        }
+    }
+
+    // ===== PARTICLES =====
+    function mkParticles(x,y,type,cnt){
+        for(var i=0;i<cnt;i++){
+            var c,s,l,sp;
+            switch(type){
+                case'fire':c=['#e74c3c','#e67e22','#f1c40f'][Math.floor(Math.random()*3)];s=Math.random()*5+2;l=Math.random()*20+10;sp=Math.random()*2+.5;break;
+                case'water':c=['#3498db','#2980b9','#1abc9c'][Math.floor(Math.random()*3)];s=Math.random()*4+1;l=Math.random()*15+5;sp=Math.random()*1.5+.5;break;
+                case'energy':c=['#0ff','#00e5ff','#40c4ff'][Math.floor(Math.random()*3)];s=Math.random()*4+2;l=Math.random()*15+8;sp=Math.random()*2+1;break;
+                case'hit':c=['#f39c12','#d35400','#f1c40f'][Math.floor(Math.random()*3)];s=Math.random()*3+1;l=Math.random()*15+5;sp=Math.random()*3+1;break;
+                case'explosion':c=['#e74c3c','#c0392b','#f39c12'][Math.floor(Math.random()*3)];s=Math.random()*6+2;l=Math.random()*30+10;sp=Math.random()*4+2;break;
+                case'heal':c=['#2ecc71','#27ae60','#1abc9c'][Math.floor(Math.random()*3)];s=Math.random()*5+2;l=Math.random()*25+15;sp=Math.random()*2+1;break;
+                default:c='#fff';s=Math.random()*3+1;l=Math.random()*20+10;sp=Math.random()*2+1;
+            }
+            var a=Math.random()*Math.PI*2;particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,c:c,s:s,l:l,ml:l});
+        }
+    }
+
+    // ===== FIRE WEAPON =====
+    function fireWeapon(){
+        var w=weapons[tank.curW];
+        if(w.melee){
+            for(var i=enemies.length-1;i>=0;i--){
+                var dx=enemies[i].x-tank.x,dy=enemies[i].y-tank.y,d=Math.sqrt(dx*dx+dy*dy);
+                if(d<w.range&&Math.abs(normAng(Math.atan2(dy,dx)-tank.angle))<Math.PI/2){
+                    enemies[i].hp-=w.damage*dmgMult();enemies[i].x+=Math.cos(tank.angle)*20;enemies[i].y+=Math.sin(tank.angle)*20;
+                    mkParticles(enemies[i].x,enemies[i].y,'hit',5);
+                    if(enemies[i].hp<=0){handleKill(enemies[i]);enemies.splice(i,1)}
+                }
+            }
+            return;
+        }
+        if(!(hackState.hacked&&tank.curW==='energy-pistol')&&ammo[tank.curW]!==-1){ammo[tank.curW]--;updateAmmoUI()}
+        if(w.hr)tank.heat+=w.hr;
+        var fx=tank.x+Math.cos(tank.angle)*(tank.sz/2+5),fy=tank.y+Math.sin(tank.angle)*(tank.sz/2+5);
+        for(var b=0;b<w.bc;b++){
+            var ba=tank.angle;if(w.spread)ba+=(Math.random()-0.5)*w.spread;
+            var bl=Math.ceil((w.range||1000)/w.bs);
+            var bul={x:fx,y:fy,a:ba,spd:w.bs,sz:w.bsz,dmg:w.damage*dmgMult(),life:bl,color:w.color,wType:tank.curW};
+            if(w.fx)bul.fx=w.fx;if(w.kb)bul.kb=w.kb;bullets.push(bul);
+        }
+    }
+
+    // ===== GAME OVER =====
+    function gameOver(won){
+        gameActive=false;if(animId){cancelAnimationFrame(animId);animId=null}
+        updateUserStats(won);
+        gameOverTitle.textContent=won?'VICTORY!':'GAME OVER';gameOverTitle.style.color=won?'#2ecc71':'#e74c3c';
+        waveReachedEl.textContent='Wave: '+wave.cur+' / '+wave.maxW+' (World '+(getWorldIdx()+1)+': '+getWorld().name+')';
+        finalScoreEl.textContent='Score: '+score;
+        var statsHtml='Coins earned: '+coinsThisRun+' | Diamonds: '+diamondsThisRun;
+        if(currentUser&&userDB[currentUser]){var u=userDB[currentUser];statsHtml+='<br>Best wave: '+u.bestWave+' | Best score: '+u.bestScore+' | Deaths: '+u.deaths}
+        document.getElementById('gameOverStats').innerHTML=statsHtml;
+        gameOverScreen.style.display='flex';
+    }
+
+    // ===== RESTART =====
+    restartBtn.addEventListener('click',function(){gameOverScreen.style.display='none';showStartScreen()});
+    function resetGame(){
+        if(animId){cancelAnimationFrame(animId);animId=null}
+        tank.x=canvas.width/2;tank.y=canvas.height/2;tank.angle=0;
+        tank.maxHp=1000+upgrades.health*100;tank.hp=tank.maxHp;tank.heat=0;tank.curW='handgun';
+        bullets=[];enemies=[];eBullets=[];drops=[];particles=[];floatTexts=[];
+        score=0;lastFire=0;gamePaused=false;coinsThisRun=0;diamondsThisRun=0;
+        hackState.entry='';hackState.wrong=0;hackState.locked=false;hackState.hacked=false;
+        aimBot=false;autoShoot=false;
+        var wk=Object.keys(weapons);for(var i=0;i<wk.length;i++)weapons[wk[i]].unlocked=wk[i]!=='energy-pistol';
+        initAmmo();
+        if(upgrades.hackBought){activateHacks()}
+        hackBtn.textContent='[ HACK ]';hackBtn.classList.remove('hacked');
+        hackInd.classList.remove('visible');hackInd.innerHTML='';
+        hackStatusEl.textContent='';hackStatusEl.className='hack-status';hackModal.style.display='none';
+        wave.cur=0;wave.eTotal=0;wave.eSpawned=0;wave.bTotal=0;wave.bSpawned=0;
+        wave.inProg=false;wave.between=true;wave.nextT=Date.now()+1500;
+        wave.bannerTxt='GET READY!';wave.bannerST=Date.now();wave.won=false;
+        spinnerAngle=0;
+        buildWeaponUI();scoreEl.textContent='Score: 0';updateHP();updateWaveUI();updateWorldHUD();
+        coinCountEl.textContent=coins;diamondCountEl.textContent=diamonds;
+        gameActive=true;gameOverScreen.style.display='none';shopModal.style.display='none';worldTransScreen.style.display='none';
+        var keys=Object.keys(activeKeys);for(var j=0;j<keys.length;j++)activeKeys[keys[j]]=false;
+        joystickVec.x=0;joystickVec.y=0;
+        genBG();update();
+    }
+
+    // ===== GAME LOOP =====
+    function update(){
+        if(!gameActive)return;
+        if(gamePaused){animId=requestAnimationFrame(update);draw();return}
+        var t=Date.now(),w=weapons[tank.curW];
+
+        // Waves
+        if(wave.between&&t>=wave.nextT)startWave();
+        if(wave.inProg){spawnWaveE(t);checkWaveDone()}
+        updateWaveUI();
+
+        // Heat
+        if(w.hr&&tank.heat>0){tank.heat=Math.max(0,tank.heat-w.cr);if(w.maxHeat&&tank.heat>=w.maxHeat){cooldownInd.style.display='block';cooldownInd.textContent='Cooling...'}else cooldownInd.style.display='none'}else cooldownInd.style.display='none';
+
+        // Movement
+        var mx=0,my=0;
+        if(aimBot){
+            if(activeKeys.up)my-=1;if(activeKeys.down)my+=1;if(activeKeys.left)mx-=1;if(activeKeys.right)mx+=1;
+            mx+=joystickVec.x;my+=joystickVec.y;
+            var mm=Math.sqrt(mx*mx+my*my);if(mm>1){mx/=mm;my/=mm}
+            tank.x+=mx*tank.spd;tank.y+=my*tank.spd;
+            var ne=nearestEnemy();if(ne)tank.angle=Math.atan2(ne.y-tank.y,ne.x-tank.x);
+        }else{
+            if(activeKeys.left)tank.angle-=0.05;if(activeKeys.right)tank.angle+=0.05;
+            var jm=Math.sqrt(joystickVec.x*joystickVec.x+joystickVec.y*joystickVec.y);
+            if(jm>0.15){tank.x+=joystickVec.x*tank.spd;tank.y+=joystickVec.y*tank.spd}
+            else{if(activeKeys.up){tank.x+=Math.cos(tank.angle)*tank.spd;tank.y+=Math.sin(tank.angle)*tank.spd}
+            if(activeKeys.down){tank.x-=Math.cos(tank.angle)*tank.spd;tank.y-=Math.sin(tank.angle)*tank.spd}}
+        }
+        tank.x=Math.max(tank.sz/2,Math.min(canvas.width-tank.sz/2,tank.x));
+        tank.y=Math.max(tank.sz/2,Math.min(canvas.height-tank.sz/2,tank.y));
+
+        // Fire
+        var shouldFire=activeKeys.FIRE||(autoShoot&&enemies.length>0);
+        var overheated=w.maxHeat&&tank.heat>=w.maxHeat;
+        var hasAmmo=true;
+        if(!(hackState.hacked&&tank.curW==='energy-pistol')&&!w.melee&&ammo[tank.curW]!==-1&&ammo[tank.curW]<=0)hasAmmo=false;
+        if(shouldFire&&t-lastFire>w.cd&&!overheated&&hasAmmo){fireWeapon();lastFire=t}
+
+        // Spinners
+        if(upgrades.spinners){spinnerAngle+=0.04;
+            for(var si=0;si<5;si++){
+                var sa=spinnerAngle+Math.PI*2/5*si,sx=tank.x+Math.cos(sa)*55,sy=tank.y+Math.sin(sa)*55;
+                for(var sei=enemies.length-1;sei>=0;sei--){
+                    var sdx=sx-enemies[sei].x,sdy=sy-enemies[sei].y;
+                    if(Math.sqrt(sdx*sdx+sdy*sdy)<enemies[sei].sz/2+8){
+                        enemies[sei].hp-=10*dmgMult();enemies[sei].x+=Math.cos(sa)*15;enemies[sei].y+=Math.sin(sa)*15;
+                        mkParticles(sx,sy,'hit',2);
+                        if(enemies[sei].hp<=0){handleKill(enemies[sei]);enemies.splice(sei,1)}
+                    }
+                }
+            }
+        }
+
+        // Force shield
+        if(upgrades.forceShield){
+            for(var fi=enemies.length-1;fi>=0;fi--){
+                var fdx=tank.x-enemies[fi].x,fdy=tank.y-enemies[fi].y,fd=Math.sqrt(fdx*fdx+fdy*fdy);
+                if(fd<tank.sz*1.3&&t-enemies[fi].lastShieldHit>500){
+                    enemies[fi].hp-=50*dmgMult();enemies[fi].lastShieldHit=t;
+                    enemies[fi].x-=fdx/fd*20;enemies[fi].y-=fdy/fd*20;
+                    mkParticles(enemies[fi].x,enemies[fi].y,'energy',5);
+                    if(enemies[fi].hp<=0){handleKill(enemies[fi]);enemies.splice(fi,1)}
+                }
+            }
+        }
+
+        // Bullets
+        for(var bi=bullets.length-1;bi>=0;bi--){
+            var b=bullets[bi];if(b.life<=0){bullets.splice(bi,1);continue}
+            b.x+=b.spd*Math.cos(b.a);b.y+=b.spd*Math.sin(b.a);b.life--;
+            if(b.fx)mkParticles(b.x,b.y,b.fx,1);
+            if(b.x<-50||b.x>canvas.width+50||b.y<-50||b.y>canvas.height+50)bullets.splice(bi,1);
+        }
+
+        // Enemy bullets
+        for(var ei=eBullets.length-1;ei>=0;ei--){
+            var eb=eBullets[ei];eb.x+=eb.spd*Math.cos(eb.a);eb.y+=eb.spd*Math.sin(eb.a);eb.life--;
+            if(eb.life<=0){eBullets.splice(ei,1);continue}
+            var edx=tank.x-eb.x,edy=tank.y-eb.y;
+            if(Math.sqrt(edx*edx+edy*edy)<tank.sz/2+eb.sz/2){
+                tank.hp-=Math.floor(eb.dmg*shieldMult());updateHP();mkParticles(eb.x,eb.y,'hit',5);eBullets.splice(ei,1);
+                if(tank.hp<=0){gameOver(false);return}
+            }
+            if(eb.x<-50||eb.x>canvas.width+50||eb.y<-50||eb.y>canvas.height+50)eBullets.splice(ei,1);
+        }
+
+        // Particles
+        for(var pi=particles.length-1;pi>=0;pi--){particles[pi].x+=particles[pi].vx;particles[pi].y+=particles[pi].vy;particles[pi].l--;if(particles[pi].l<=0)particles.splice(pi,1)}
+
+        // Float texts
+        for(var fti=floatTexts.length-1;fti>=0;fti--){floatTexts[fti].y-=1;floatTexts[fti].life--;if(floatTexts[fti].life<=0)floatTexts.splice(fti,1)}
+
+        collectDrops();
+
+        // Enemies
+        for(var eni=enemies.length-1;eni>=0;eni--){
+            var en=enemies[eni],atx=Math.atan2(tank.y-en.y,tank.x-en.x),dtx=Math.sqrt((tank.x-en.x)*(tank.x-en.x)+(tank.y-en.y)*(tank.y-en.y));
+            en.moveAng=atx;
+            switch(en.type){
+                case'speeder':var zz=Math.sin(t*0.008+eni*2)*0.4;en.x+=Math.cos(atx+zz)*en.spd;en.y+=Math.sin(atx+zz)*en.spd;break;
+                case'shooter':
+                    if(dtx>en.sRange){en.x+=Math.cos(atx)*en.spd;en.y+=Math.sin(atx)*en.spd}
+                    else if(dtx<en.sRange*0.5){en.x-=Math.cos(atx)*en.spd*0.5;en.y-=Math.sin(atx)*en.spd*0.5}
+                    if(t-en.lastShot>en.sCD){en.lastShot=t;eBullets.push({x:en.x,y:en.y,a:atx,spd:en.sSpd,sz:5,dmg:en.sDmg,life:150})}break;
+                case'healer':
+                    en.x+=Math.cos(atx)*en.spd;en.y+=Math.sin(atx)*en.spd;
+                    if(t-en.lastHeal>en.hCD){en.lastHeal=t;en.flash=t+300;
+                        for(var hi=0;hi<enemies.length;hi++){if(hi===eni)continue;var hd=Math.sqrt((enemies[hi].x-en.x)*(enemies[hi].x-en.x)+(enemies[hi].y-en.y)*(enemies[hi].y-en.y));if(hd<en.hRange)enemies[hi].hp=Math.min(enemies[hi].maxHp,enemies[hi].hp+en.hAmt)}
+                        mkParticles(en.x,en.y,'heal',4);}break;
+                case'bomber':en.x+=Math.cos(atx)*en.spd;en.y+=Math.sin(atx)*en.spd;if(dtx<50)en.flash=t;break;
+                default:en.x+=Math.cos(atx)*en.spd;en.y+=Math.sin(atx)*en.spd;break;
+            }
+            // Bullet collision
+            for(var bj=bullets.length-1;bj>=0;bj--){
+                var bu=bullets[bj],bdx=bu.x-en.x,bdy=bu.y-en.y;
+                if(Math.sqrt(bdx*bdx+bdy*bdy)<en.sz/2+bu.sz/2){
+                    en.hp-=bu.dmg;
+                    if(bu.kb){var kr=en.type==='brute'||en.boss?0.2:1;en.x+=Math.cos(bu.a)*bu.kb*kr;en.y+=Math.sin(bu.a)*bu.kb*kr}
+                    mkParticles(bu.x,bu.y,'hit',3);
+                    if(bu.fx!=='fire'&&bu.fx!=='energy')bullets.splice(bj,1);
+                    if(en.hp<=0){handleKill(en);enemies.splice(eni,1);break}
+                }
+            }
+            if(eni>=enemies.length)continue;
+            // Tank collision
+            var tdx=tank.x-enemies[eni].x,tdy=tank.y-enemies[eni].y;
+            if(Math.sqrt(tdx*tdx+tdy*tdy)<tank.sz/2+enemies[eni].sz/2){
+                tank.hp-=Math.floor(enemies[eni].dmg*shieldMult());updateHP();
+                enemies[eni].x+=(enemies[eni].x-tank.x)*0.5;enemies[eni].y+=(enemies[eni].y-tank.y)*0.5;
+                if(tank.hp<=0){gameOver(false);return}
+            }
+        }
+
+        draw();animId=requestAnimationFrame(update);
+    }
+
+    // ===== DRAW =====
+    function draw(){
+        var t=Date.now();ctx.clearRect(0,0,canvas.width,canvas.height);drawBG();
+
+        // Particles
+        for(var pi=0;pi<particles.length;pi++){var p=particles[pi];ctx.globalAlpha=p.l/p.ml;ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);ctx.fillStyle=p.c;ctx.fill()}ctx.globalAlpha=1;
+
+        // Drops
+        for(var di=0;di<drops.length;di++){
+            var d=drops[di],el=t-d.st,fo=el>d.life-3000?(d.life-el)/3000:1,bob=Math.sin(t*0.005+di)*3;
+            ctx.globalAlpha=fo;
+            if(d.type==='health'){ctx.fillStyle='#2ecc71';ctx.fillRect(d.x-3,d.y-8+bob,6,16);ctx.fillRect(d.x-8,d.y-3+bob,16,6)}
+            else if(d.type==='ammo'){ctx.fillStyle='#e67e22';ctx.fillRect(d.x-7,d.y-5+bob,14,10);ctx.fillStyle='#fff';ctx.font='bold 8px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('A',d.x,d.y+bob)}
+            else if(d.type==='nuke'){ctx.fillStyle='#f44';ctx.beginPath();ctx.arc(d.x,d.y+bob,10,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 10px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('\u2622',d.x,d.y+bob)}
+            else if(d.type==='magnet'){ctx.fillStyle='#e67e22';ctx.beginPath();ctx.arc(d.x,d.y+bob,10,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 12px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('M',d.x,d.y+bob)}
+            ctx.globalAlpha=1;
+        }
+        ctx.textBaseline='alphabetic';
+
+        // Bullets
+        for(var bi=0;bi<bullets.length;bi++){
+            var b=bullets[bi];ctx.beginPath();
+            if(b.fx==='fire'){var g=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.sz);g.addColorStop(0,'#f1c40f');g.addColorStop(1,'#e74c3c');ctx.fillStyle=g}
+            else if(b.fx==='water'){var gw=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.sz);gw.addColorStop(0,'#3498db');gw.addColorStop(1,'#2980b9');ctx.fillStyle=gw}
+            else if(b.fx==='energy'){var ge=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.sz+3);ge.addColorStop(0,'#fff');ge.addColorStop(0.3,'#0ff');ge.addColorStop(1,'rgba(0,255,255,0)');ctx.fillStyle=ge;ctx.arc(b.x,b.y,b.sz+3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.fillStyle='#0ff'}
+            else ctx.fillStyle=b.color||'#f1c40f';
+            if(b.wType==='knife-throw'){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a+Math.PI/4);ctx.fillRect(-b.sz/2,-b.sz/2,b.sz,b.sz);ctx.restore()}
+            else{ctx.arc(b.x,b.y,b.sz/2,0,Math.PI*2);ctx.fill()}
+        }
+
+        // Enemy bullets
+        for(var ei=0;ei<eBullets.length;ei++){var eb=eBullets[ei];ctx.beginPath();ctx.arc(eb.x,eb.y,eb.sz/2,0,Math.PI*2);ctx.fillStyle='#ff4444';ctx.fill()}
+
+        // Enemies
+        for(var eni=0;eni<enemies.length;eni++){
+            var en=enemies[eni],hpP=en.hp/en.maxHp,bW=en.sz*(en.boss?1.5:1);
+            // Clamp label Y so it doesn't go off screen
+            var labelY=Math.max(20,en.y-en.sz/2-12);
+            ctx.fillStyle='#e74c3c';ctx.fillRect(en.x-bW/2,labelY,bW,5);
+            ctx.fillStyle='#2ecc71';ctx.fillRect(en.x-bW/2,labelY,bW*hpP,5);
+            if(en.boss){
+                var bossLbl=en.bossType==='final'?'FINAL BOSS':en.bossType==='world'?'WORLD BOSS':'MINI BOSS';
+                var bossClr=en.bossType==='final'?'#ff0':en.bossType==='world'?'#f44':'#c39bd3';
+                ctx.fillStyle=bossClr;ctx.font='bold 10px Courier New';ctx.textAlign='center';ctx.fillText(bossLbl,en.x,Math.max(12,labelY-4));
+            }
+            else if(en.lbl){ctx.fillStyle=en.color;ctx.font='bold 8px Courier New';ctx.textAlign='center';ctx.fillText(en.lbl,en.x,Math.max(12,labelY-4))}
+            var dc=en.boss?en.color:en.color;
+            if(en.type==='bomber'&&Math.floor(t/200)%2===0)dc='#fff';
+            if(en.type==='healer'&&en.flash>t){ctx.beginPath();ctx.arc(en.x,en.y,en.hRange,0,Math.PI*2);ctx.strokeStyle='rgba(26,188,156,0.3)';ctx.lineWidth=2;ctx.stroke()}
+            ctx.beginPath();ctx.arc(en.x,en.y,en.sz/2,0,Math.PI*2);ctx.fillStyle=dc;ctx.fill();
+            if(en.boss){ctx.strokeStyle=en.bossType==='final'?'#ff0':en.bossType==='world'?'#f44':'#c39bd3';ctx.lineWidth=en.bossType==='mini'?2:3;ctx.stroke();
+                // Boss glow
+                ctx.beginPath();ctx.arc(en.x,en.y,en.sz/2+4+Math.sin(t*0.005)*3,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;ctx.stroke();}
+            if(en.type==='brute'&&!en.boss){ctx.strokeStyle='#500';ctx.lineWidth=3;ctx.stroke();for(var sp=0;sp<6;sp++){var ssa=Math.PI*2/6*sp;ctx.beginPath();ctx.moveTo(en.x+Math.cos(ssa)*en.sz/2,en.y+Math.sin(ssa)*en.sz/2);ctx.lineTo(en.x+Math.cos(ssa)*(en.sz/2+6),en.y+Math.sin(ssa)*(en.sz/2+6));ctx.strokeStyle='#8b0000';ctx.lineWidth=2;ctx.stroke()}}
+            if(en.type==='shooter'&&!en.boss){var ga=Math.atan2(tank.y-en.y,tank.x-en.x);ctx.beginPath();ctx.moveTo(en.x+Math.cos(ga)*en.sz/2,en.y+Math.sin(ga)*en.sz/2);ctx.lineTo(en.x+Math.cos(ga)*(en.sz/2+10),en.y+Math.sin(ga)*(en.sz/2+10));ctx.strokeStyle='#d35400';ctx.lineWidth=3;ctx.stroke()}
+            if(en.type==='healer'&&!en.boss){ctx.fillStyle='#fff';ctx.fillRect(en.x-2,en.y-6,4,12);ctx.fillRect(en.x-6,en.y-2,12,4)}
+            if(en.type==='bomber'&&!en.boss){ctx.fillStyle='#000';ctx.font='bold 10px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('!',en.x,en.y);ctx.textBaseline='alphabetic'}
+            if(en.type!=='bomber'&&en.type!=='healer'){var ea=Math.atan2(tank.y-en.y,tank.x-en.x),ex=Math.cos(ea)*en.sz/4,ey=Math.sin(ea)*en.sz/4;ctx.beginPath();ctx.arc(en.x+ex-3,en.y+ey-3,en.boss?4:2.5,0,Math.PI*2);ctx.arc(en.x+ex+3,en.y+ey+3,en.boss?4:2.5,0,Math.PI*2);ctx.fillStyle=en.boss?'#ff0':'#fff';ctx.fill()}
+        }
+
+        // Force shield
+        if(upgrades.forceShield){
+            ctx.beginPath();ctx.arc(tank.x,tank.y,tank.sz*1.3,0,Math.PI*2);
+            ctx.strokeStyle='rgba(0,255,255,'+(0.3+Math.sin(t*0.005)*0.15)+')';ctx.lineWidth=3;ctx.stroke();
+            ctx.fillStyle='rgba(0,255,255,0.05)';ctx.fill();
+        }
+
+        // Tank
+        ctx.save();ctx.translate(tank.x,tank.y);ctx.rotate(tank.angle);
+        ctx.fillStyle=hackState.hacked?'#1a3a2a':'#2c3e50';ctx.fillRect(-tank.sz/2,-tank.sz/2,tank.sz,tank.sz);
+        if(hackState.hacked){ctx.shadowColor='#0ff';ctx.shadowBlur=12}
+        var cw=weapons[tank.curW];ctx.fillStyle=cw.color||'#e74c3c';
+        if(cw.melee)ctx.fillRect(tank.sz/4,-3,15,6);
+        else if(cw.fx==='fire')ctx.fillRect(0,-5,tank.sz/2+5,10);
+        else if(cw.fx==='water'){ctx.fillRect(0,-4,tank.sz/2+10,8);ctx.beginPath();ctx.arc(tank.sz/2+10,0,4,0,Math.PI*2);ctx.fill()}
+        else if(cw.fx==='energy'){ctx.fillRect(0,-3,tank.sz/2+18,6);ctx.beginPath();ctx.arc(tank.sz/2+18,0,5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill()}
+        else if(tank.curW==='minigun'){ctx.fillRect(0,-8,tank.sz/2+15,4);ctx.fillRect(0,-3,tank.sz/2+15,4);ctx.fillRect(0,2,tank.sz/2+15,4)}
+        else if(tank.curW==='shotgun')ctx.fillRect(0,-6,tank.sz/2+15,12);
+        else ctx.fillRect(0,-4,tank.sz/2+15,8);
+        ctx.shadowBlur=0;ctx.strokeStyle=hackState.hacked?'#0f0':'#34495e';ctx.lineWidth=2;ctx.strokeRect(-tank.sz/2,-tank.sz/2,tank.sz,tank.sz);
+        if(cw.maxHeat){var hp2=tank.heat/cw.maxHeat;ctx.fillStyle=tank.heat>=cw.maxHeat?'#e74c3c':'rgb('+Math.floor(255*hp2)+','+Math.floor(255*(1-hp2))+',0)';ctx.fillRect(-tank.sz/2,tank.sz/2+5,tank.sz*hp2,5)}
+        ctx.restore();
+
+        // Spinners
+        if(upgrades.spinners){
+            for(var si2=0;si2<5;si2++){
+                var dsa=spinnerAngle+Math.PI*2/5*si2,sx2=tank.x+Math.cos(dsa)*55,sy2=tank.y+Math.sin(dsa)*55;
+                ctx.beginPath();ctx.arc(sx2,sy2,8,0,Math.PI*2);ctx.fillStyle='rgba(93,92,222,0.8)';ctx.fill();
+                ctx.strokeStyle='#5D5CDE';ctx.lineWidth=2;ctx.stroke();
+                ctx.beginPath();ctx.moveTo(sx2+Math.cos(dsa)*8,sy2+Math.sin(dsa)*8);ctx.lineTo(sx2-Math.cos(dsa)*8,sy2-Math.sin(dsa)*8);
+                ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=2;ctx.stroke();
+            }
+        }
+
+        // Aim line
+        if(aimBot){
+            var nr=nearestEnemy();
+            if(nr){ctx.beginPath();ctx.moveTo(tank.x,tank.y);ctx.lineTo(nr.x,nr.y);ctx.strokeStyle='rgba(0,255,255,0.4)';ctx.lineWidth=1;ctx.setLineDash([5,5]);ctx.stroke();ctx.setLineDash([]);
+                ctx.beginPath();ctx.arc(nr.x,nr.y,nr.sz/2+5,0,Math.PI*2);ctx.strokeStyle='rgba(0,255,255,0.7)';ctx.lineWidth=2;ctx.stroke();
+                if(hackState.hacked){ctx.beginPath();ctx.moveTo(nr.x-12,nr.y);ctx.lineTo(nr.x+12,nr.y);ctx.moveTo(nr.x,nr.y-12);ctx.lineTo(nr.x,nr.y+12);ctx.strokeStyle='rgba(255,0,0,0.6)';ctx.lineWidth=1;ctx.stroke()}}
+        }
+
+        // Float texts
+        for(var fi=0;fi<floatTexts.length;fi++){
+            var ft=floatTexts[fi];ctx.globalAlpha=ft.life/ft.maxLife;ctx.fillStyle=ft.clr;ctx.font='bold 14px Courier New';ctx.textAlign='center';ctx.fillText(ft.txt,ft.x,ft.y);
+        }ctx.globalAlpha=1;
+
+        // Wave banner
+        if(wave.bannerTxt&&t-wave.bannerST<wave.bannerDur){
+            var be=t-wave.bannerST,ba=be<300?be/300:be>wave.bannerDur-500?(wave.bannerDur-be)/500:1;
+            ctx.globalAlpha=ba;ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,canvas.height/2-50,canvas.width,100);
+            var wld=getWorld();ctx.fillStyle=wld.accent;ctx.font='bold 36px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';
+            ctx.shadowColor=wld.accent;ctx.shadowBlur=15;ctx.fillText(wave.bannerTxt,canvas.width/2,canvas.height/2);
+            ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textBaseline='alphabetic';
+        }
+    }
+
+    // ===== INIT =====
+    buildWeaponUI();updateWorldHUD();
+    </script>
+</body>
+</html>
